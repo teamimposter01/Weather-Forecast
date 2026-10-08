@@ -6,7 +6,7 @@ const CONFIG = {
     // Default API URL (auto-detects local vs production)
     DEFAULT_API_URL: (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
         ? 'http://localhost:8000'
-        : 'https://weather-forecast-backend.onrender.com', // Replace with your Render backend URL
+        : 'https://weather-forecast-4zdw.onrender.com', // Live Render Backend URL
 
     getApiBaseUrl() {
         const stored = localStorage.getItem('WEATHER_API_URL');
