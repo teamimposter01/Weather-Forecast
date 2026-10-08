@@ -1,60 +1,94 @@
-# 🇮🇳 Hybrid AI–NWP Multi-Model Weather Forecast Blending System for India
+# 🇮🇳 Hybrid AI–NWP Multi-Model Weather Forecast Blending System
 
 A production-oriented and research-ready weather forecast blending engine designed to dynamically combine Numerical Weather Prediction (NWP) models (**ECMWF**, **GFS**) with specialized **XGBoost AI Forecast Models** using a **LightGBM Dynamic Weighting Engine** and **Weather Regime Detection**.
 
 ---
 
-## 🌟 Key Features
+## 🏗️ Architecture & Project Structure
 
-1. **Multi-Model Dynamic Blending**:
-   - **ECMWF**, **GFS**, and **AI Forecast Base Models** dynamically weighted based on region, season, lead time, historical skill (MAE, RMSE, Bias), recent error, and forecast disagreement.
-   - Strictly enforces non-negative weights that sum to 1.0 using Softmax normalization.
+The project is organized into an independent **Frontend** and **Backend** architecture:
 
-2. **AI Model Architecture**:
-   - **Temperature**: XGBoost Regressor ($R^2 > 0.98$).
-   - **Rainfall**: Two-Stage Architecture (Stage 1 XGBoost Classifier for Rain/No-Rain $\times$ Stage 2 XGBoost Regressor for Rainfall Amount).
-   - **Wind Speed**: XGBoost Regressor predicting wind speed and $u/v$ components.
-   - **Extreme Weather**: Independent XGBoost Classifiers for **Heatwave**, **Heavy Rainfall**, and **High Wind** probabilities.
-
-3. **Data Leakage Safeguards**:
-   - Chronological train/validation/test splits.
-   - Closed-left rolling observational windows (`shift(1)`) to guarantee zero future-feature leakage.
-   - Automated test suite verifying temporal alignment and target integrity.
-
-4. **FastAPI Backend & Interactive Scientific Dashboard**:
-   - RESTful API exposing `/api/forecast`, `/api/weights`, `/api/weights/map` (GeoJSON grid map), `/api/models`, `/api/skills`, `/api/extremes`, and `/api/backtest`.
-   - Web Dashboard with Tailwind CSS, Chart.js, and Leaflet.js interactive weight maps.
+```
+Weather-Forecast/
+├── frontend/                          # 🌐 Static SPA Dashboard (Optimized for Vercel)
+│   ├── index.html                     # Interactive Leaflet & Chart.js dashboard
+│   ├── config.js                      # Dynamic API routing configuration
+│   ├── vercel.json                    # Vercel deployment configuration
+│   ├── package.json                   # Frontend metadata
+│   └── README.md                      # Vercel setup instructions
+│
+├── backend/                           # ⚙️ FastAPI & ML Engine (Optimized for Render)
+│   ├── api/                           # Modular FastAPI REST API routes & schemas
+│   ├── config/                        # Locations & system settings
+│   ├── models/                        # ML base models, weights & regime engines
+│   ├── pipeline/                      # Ingest, preprocess, feature & fusion pipelines
+│   ├── storage/                       # DuckDB database engine & schema definitions
+│   ├── tests/                         # Automated unit & integration tests
+│   ├── requirements.txt               # Backend Python dependencies
+│   ├── render.yaml                    # Render Blueprint deployment definition
+│   ├── Procfile                       # Render Web process runner
+│   ├── pytest.ini                     # Pytest configuration
+│   └── README.md                      # Render setup instructions
+│
+├── .gitignore                         # Project-wide git exclusions
+└── README.md                          # Main project documentation
+```
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Recommended Deployment Strategy
 
-### 1. Installation
+### Why Frontend on Vercel + Backend on Render?
+- **Render for Backend**: Backend packages (`xgboost`, `lightgbm`, `scikit-learn`, `duckdb`) exceed Vercel's strict **250MB serverless bundle limit**. Render runs full persistent Python processes with no bundle size limits and supports live streaming/websockets.
+- **Vercel for Frontend**: Instant global CDN edge delivery for static assets, automatic SSL, zero build timeouts, and lightning-fast load times.
+
+---
+
+### 1. Deploy Backend on Render
+1. Create a free account on [Render](https://dashboard.render.com/).
+2. Click **New +** -> **Web Service**.
+3. Select your GitHub repository (`teamimposter01/Weather-Forecast`).
+4. Set:
+   - **Root Directory**: `backend`
+   - **Environment**: `Python 3`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn api.app:app --host 0.0.0.0 --port $PORT`
+5. Click **Deploy Web Service**.
+6. Copy your public service URL (e.g. `https://weather-forecast-backend.onrender.com`).
+
+---
+
+### 2. Deploy Frontend on Vercel
+1. Create a free account on [Vercel](https://vercel.com/).
+2. Click **Add New Project** and import `teamimposter01/Weather-Forecast`.
+3. In **Root Directory**, select **`frontend`**.
+4. Framework Preset: **Other**.
+5. Click **Deploy**.
+6. Once deployed, open your Vercel URL, click **⚙️ Backend API** in the navigation bar, enter your Render URL, and test the connection!
+
+---
+
+## 💻 Local Development
+
+### 1. Run Backend
 ```bash
+cd backend
 pip install -r requirements.txt
+uvicorn api.app:app --reload --port 8000
 ```
+- API Docs: `http://localhost:8000/docs`
+- Health Check: `http://localhost:8000/api/health`
 
-### 2. Run Operational Pipeline
+### 2. Run Automated Tests
 ```bash
-python -m pipeline.run_all
-```
-
-### 3. Launch Web Dashboard & API Server
-```bash
-python -m uvicorn api.app:app --reload --port 8000
-```
-- **Interactive Dashboard**: `http://localhost:8000/dashboard`
-- **Swagger API Documentation**: `http://localhost:8000/docs`
-
-### 4. Run Automated Test Suite
-```bash
+cd backend
 pytest
 ```
 
----
-
-## 📊 Research Question Answered
-
-> *"Can context-aware dynamic blending of NWP and AI forecasts consistently improve forecast skill compared with individual forecast systems and simple averaging?"*
-
-**Empirical Result**: Yes. Dynamic blending achieved an **18.5% MAE error reduction** compared to individual NWP models and simple equal weighting across Indian test locations.
+### 3. Open Frontend
+Open `frontend/index.html` in your web browser or serve via any static server:
+```bash
+cd frontend
+python -m http.server 3000
+```
+Open `http://localhost:3000`. It will automatically connect to your local backend at `http://localhost:8000`.

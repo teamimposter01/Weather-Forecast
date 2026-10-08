@@ -1,0 +1,6 @@
+{
+  "name": "weather-forecast-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Frontend Dashboard for Hybrid AI-NWP Weather Forecast Blending System"
+}

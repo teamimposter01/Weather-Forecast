@@ -1,12 +1,34 @@
+# Python caches & build
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
 .pytest_cache/
+.coverage
+htmlcov/
+
+# Environments
 .env
+.env.*
+venv/
+.venv/
+env/
+
+# Logs & IDEs
 *.log
 .vscode/
 .idea/
-storage/db/*.duckdb
+
+# Database & Model artifacts
 *.duckdb
-models/saved/*.joblib
+storage/db/*.duckdb
+backend/storage/db/*.duckdb
 *.joblib
+models/saved/*.joblib
+backend/models/saved/*.joblib
+
+# Frontend & Vercel
+.vercel
+node_modules/
+dist/
+build/
