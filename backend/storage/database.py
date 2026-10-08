@@ -12,19 +12,29 @@ from config.settings import DB_PATH, PROCESSED_DATA_DIR
 class StorageEngine:
     def __init__(self, db_path: str = str(DB_PATH)):
         self.db_path = db_path
+        self._conn = None
+        self._init_conn()
         self._init_db()
 
-    def get_connection(self, read_only: bool = False):
-        """Get DuckDB database connection with read-only and in-memory fallback for serverless."""
-        if not os.path.exists(self.db_path) and read_only:
-            return duckdb.connect(":memory:")
+    def _init_conn(self):
+        """Open persistent DuckDB connection with file locking protection."""
         try:
-            return duckdb.connect(self.db_path, read_only=read_only)
+            self._conn = duckdb.connect(self.db_path, read_only=False)
         except Exception:
             try:
-                return duckdb.connect(self.db_path, read_only=True)
+                self._conn = duckdb.connect(self.db_path, read_only=True)
             except Exception:
-                return duckdb.connect(":memory:")
+                self._conn = duckdb.connect(":memory:")
+
+    def get_connection(self, read_only: bool = False):
+        """Get cursor from persistent DuckDB database connection."""
+        if self._conn is None:
+            self._init_conn()
+        try:
+            return self._conn.cursor()
+        except Exception:
+            self._init_conn()
+            return self._conn.cursor()
 
     def _init_db(self):
         """Initialize database tables if they do not exist."""

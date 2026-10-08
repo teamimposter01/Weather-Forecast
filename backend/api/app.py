@@ -41,6 +41,36 @@ app.include_router(integrity.router, prefix="/api")
 # Include Dashboard Router
 app.include_router(dashboard_router)
 
+@app.on_event("startup")
+def startup_event():
+    """Ensure database tables and initial baseline forecast cache exist."""
+    try:
+        from storage.database import storage
+        storage._init_db()
+        check = storage.query("SELECT COUNT(*) as cnt FROM blended_forecasts")
+        if check.empty or check.iloc[0]["cnt"] == 0:
+            print("[Startup] Seeding initial forecast dataset...")
+            from tests.test_data_generator import generate_synthetic_test_dataset
+            from pipeline.preprocess import DataPreprocessor
+            from models.fusion_engine import ForecastFusionEngine
+            from models.extreme_engine import ExtremeWeatherEngine
+            import pandas as pd
+            obs, fc = generate_synthetic_test_dataset(days=3)
+            p = DataPreprocessor()
+            aligned = p.create_aligned_dataset(obs, fc, save_to_db=False)
+            fe = ForecastFusionEngine()
+            b_t = fe.fuse_forecasts(aligned, variable="temperature")
+            b_r = fe.fuse_forecasts(aligned, variable="rainfall")
+            b_w = fe.fuse_forecasts(aligned, variable="wind_speed")
+            all_blended = pd.concat([b_t, b_r, b_w], ignore_index=True)
+            storage.save_dataframe(all_blended, "blended_forecasts", mode="append")
+            ee = ExtremeWeatherEngine()
+            probs = ee.predict_extreme_probabilities(aligned)
+            storage.save_dataframe(probs, "extreme_probabilities", mode="append")
+            print("[Startup] Initial dataset successfully seeded.")
+    except Exception as e:
+        print(f"[Startup] Bootstrap notice: {e}")
+
 # Mount Dashboard Static files if directory exists
 static_dir = BASE_DIR / "dashboard" / "static"
 if static_dir.exists():
