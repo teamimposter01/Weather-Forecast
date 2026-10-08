@@ -45,3 +45,30 @@ def test_backtest_endpoint():
     data = response.json()
     assert "models" in data
     assert "skill_improvement_pct" in data
+
+def test_skills_endpoint():
+    response = client.get("/api/skills")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+def test_extremes_endpoint():
+    response = client.get("/api/extremes")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+def test_integrity_endpoint():
+    response = client.get("/api/integrity")
+    assert response.status_code == 200
+    data = response.json()
+    assert "overall_status" in data
+    assert "tables" in data
+
+def test_dashboard_and_root_endpoints():
+    res_root = client.get("/")
+    assert res_root.status_code == 200
+    assert "Hybrid AI" in res_root.text
+
+    res_dash = client.get("/dashboard")
+    assert res_dash.status_code == 200
+    assert "Hybrid AI" in res_dash.text
+

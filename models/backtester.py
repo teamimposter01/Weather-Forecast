@@ -5,8 +5,8 @@ and the Hybrid Dynamic Weighting System against actual observations.
 """
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Tuple
-from sklearn.metrics import mean_absolute_error, root_mean_squared_error
+from typing import Dict, List, Tuple, Any
+from models.sklearn_compat import mean_absolute_error, root_mean_squared_error
 
 class Backtester:
     @staticmethod
