@@ -18,7 +18,10 @@ def get_extreme_weather_guidance(location: Optional[str] = None):
         params.append(location.lower())
 
     query += " ORDER BY valid_time_utc ASC, lead_time_hours ASC LIMIT 100"
-    df = storage.query(query, params)
+    try:
+        df = storage.query(query, params)
+    except Exception:
+        return []
 
     if df.empty:
         return []

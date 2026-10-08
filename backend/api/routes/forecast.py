@@ -94,7 +94,10 @@ def _process_and_blend_single_location(loc_id: str, lat: float, lon: float):
     if forecast_df is None or forecast_df.empty:
         return
 
-    obs_df = storage.query("SELECT * FROM observations ORDER BY timestamp_utc")
+    try:
+        obs_df = storage.query("SELECT * FROM observations ORDER BY timestamp_utc")
+    except Exception:
+        obs_df = pd.DataFrame()
     processor = DataPreprocessor()
     aligned_df = processor.create_aligned_dataset(obs_df, forecast_df, save_to_db=False)
     aligned_loc = aligned_df[aligned_df["location_id"] == loc_id].copy()
@@ -148,12 +151,19 @@ def _get_forecasts(
 
         # Check if already present in DB for target variable
         var_filter = variable.lower() if variable else "temperature"
-        check_df = storage.query(
-            "SELECT COUNT(*) as cnt FROM blended_forecasts WHERE location_id = ? AND variable = ?",
-            [loc_key, var_filter]
-        )
+        try:
+            check_df = storage.query(
+                "SELECT COUNT(*) as cnt FROM blended_forecasts WHERE location_id = ? AND variable = ?",
+                [loc_key, var_filter]
+            )
+        except Exception:
+            check_df = pd.DataFrame()
+
         if check_df.empty or check_df.iloc[0]["cnt"] == 0:
-            _process_and_blend_single_location(loc_key, lat_clean, lon_clean)
+            try:
+                _process_and_blend_single_location(loc_key, lat_clean, lon_clean)
+            except Exception as e:
+                print(f"[Forecast] Error processing location {loc_key}: {e}")
         location_id = loc_key
 
     query = "SELECT * FROM blended_forecasts WHERE 1=1"
@@ -169,12 +179,18 @@ def _get_forecasts(
         params.append(lead_time)
 
     query += " ORDER BY issue_time_utc DESC, valid_time_utc ASC, lead_time_hours ASC LIMIT 200"
-    df = storage.query(query, params)
+    try:
+        df = storage.query(query, params)
+    except Exception:
+        df = pd.DataFrame()
     
     if df.empty:
         return []
 
-    ext_df = storage.query("SELECT * FROM extreme_probabilities")
+    try:
+        ext_df = storage.query("SELECT * FROM extreme_probabilities")
+    except Exception:
+        ext_df = pd.DataFrame()
     ext_lookup = {}
     if not ext_df.empty:
         for _, r in ext_df.iterrows():

@@ -30,7 +30,6 @@ class StorageEngine:
         """Initialize database tables if they do not exist."""
         try:
             with self.get_connection(read_only=False) as conn:
-                # Observations / Reanalysis Table
                 conn.execute("""
                 CREATE TABLE IF NOT EXISTS observations (
                     timestamp_utc TIMESTAMP,
@@ -47,10 +46,6 @@ class StorageEngine:
                     data_source VARCHAR,
                     PRIMARY KEY (timestamp_utc, location_id, data_source)
                 );
-            """)
-
-            # Model Forecasts Table (ECMWF, GFS, AI)
-            conn.execute("""
                 CREATE TABLE IF NOT EXISTS forecasts (
                     issue_time_utc TIMESTAMP,
                     valid_time_utc TIMESTAMP,
@@ -68,10 +63,6 @@ class StorageEngine:
                     surface_pressure_hpa DOUBLE,
                     PRIMARY KEY (issue_time_utc, lead_time_hours, location_id, model_name)
                 );
-            """)
-
-            # Historical Skill Table
-            conn.execute("""
                 CREATE TABLE IF NOT EXISTS historical_skill (
                     location_id VARCHAR,
                     variable VARCHAR,
@@ -85,10 +76,6 @@ class StorageEngine:
                     updated_at_utc TIMESTAMP,
                     PRIMARY KEY (location_id, variable, model_name, lead_time_hours, season)
                 );
-            """)
-
-            # Blended Forecasts Table
-            conn.execute("""
                 CREATE TABLE IF NOT EXISTS blended_forecasts (
                     issue_time_utc TIMESTAMP,
                     valid_time_utc TIMESTAMP,
@@ -108,10 +95,6 @@ class StorageEngine:
                     weather_regime VARCHAR,
                     PRIMARY KEY (issue_time_utc, lead_time_hours, location_id, variable)
                 );
-            """)
-
-            # Extreme Weather Probabilities Table
-            conn.execute("""
                 CREATE TABLE IF NOT EXISTS extreme_probabilities (
                     issue_time_utc TIMESTAMP,
                     valid_time_utc TIMESTAMP,
@@ -122,10 +105,6 @@ class StorageEngine:
                     high_wind_prob DOUBLE,
                     PRIMARY KEY (issue_time_utc, lead_time_hours, location_id)
                 );
-            """)
-
-            # Model Metadata Registry
-            conn.execute("""
                 CREATE TABLE IF NOT EXISTS model_registry (
                     model_name VARCHAR,
                     variable VARCHAR,
@@ -137,9 +116,9 @@ class StorageEngine:
                     created_at_utc TIMESTAMP,
                     PRIMARY KEY (model_name, variable, version)
                 );
-            """)
-        except Exception:
-            pass
+                """)
+        except Exception as e:
+            print(f"[StorageEngine] Table initialization notice: {e}")
 
     def upsert_dataframe(self, df: pd.DataFrame, table_name: str, unique_cols: List[str]):
         """

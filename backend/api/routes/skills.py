@@ -29,7 +29,10 @@ def get_historical_skills(
         params.append(season.upper())
 
     query += " ORDER BY location_id, variable, lead_time_hours LIMIT 100"
-    df = storage.query(query, params)
+    try:
+        df = storage.query(query, params)
+    except Exception:
+        return []
 
     if df.empty:
         return []

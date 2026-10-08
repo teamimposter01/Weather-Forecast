@@ -137,6 +137,9 @@ class FeatureEngineer:
         Sorted by timestamp per location to guarantee NO FUTURE DATA LEAKAGE.
         Handles 100% complete data imputation for missing values.
         """
+        if obs_df is None or obs_df.empty or "location_id" not in obs_df.columns or "timestamp_utc" not in obs_df.columns:
+            return pd.DataFrame()
+
         obs_df = obs_df.sort_values(["location_id", "timestamp_utc"]).copy()
         
         processed_groups = []
